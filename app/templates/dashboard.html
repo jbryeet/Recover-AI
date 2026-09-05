@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>RecoverAI Dashboard</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f7fa;
+            color: #1f2937;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 32px;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 32px;
+        }
+
+        .brand p {
+            margin: 6px 0 0;
+            color: #6b7280;
+        }
+
+        .status {
+            padding: 9px 14px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .status.active {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .status.fallback {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .notice {
+            background: #fff7ed;
+            border: 1px solid #fed7aa;
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 24px;
+            color: #9a3412;
+            font-size: 14px;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+            margin-bottom: 32px;
+        }
+
+        .metric-card {
+            background: white;
+            border-radius: 12px;
+            padding: 22px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .metric-card p {
+            margin: 0 0 8px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .metric-card h2 {
+            margin: 0;
+            font-size: 27px;
+        }
+
+        section {
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        section h2 {
+            margin: 0 0 6px;
+            font-size: 21px;
+        }
+
+        .section-description {
+            margin: 0 0 20px;
+            color: #6b7280;
+            font-size: 14px;
+        }
+
+        .table-wrapper {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 850px;
+        }
+
+        th {
+            text-align: left;
+            padding: 13px 10px;
+            border-bottom: 2px solid #e5e7eb;
+            font-size: 13px;
+            color: #6b7280;
+        }
+
+        td {
+            padding: 15px 10px;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 14px;
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 5px 9px;
+            border-radius: 14px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .retry {
+            background: #dbeafe;
+            color: #1d4ed8;
+        }
+
+        .link {
+            background: #ede9fe;
+            color: #6d28d9;
+        }
+
+        .stop {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .recovered {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .not-recovered {
+            background: #f3f4f6;
+            color: #4b5563;
+        }
+
+        .ai-unavailable {
+            color: #9ca3af;
+            font-style: italic;
+        }
+
+        .recovery-link {
+            display: inline-block;
+            padding: 7px 11px;
+            background: #111827;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 12px;
+        }
+
+        .recovery-link:hover {
+            opacity: 0.85;
+        }
+
+        .audit-result {
+            color: #4b5563;
+        }
+
+        .timestamp {
+            color: #6b7280;
+            font-size: 13px;
+        }
+
+        .empty {
+            text-align: center;
+            color: #9ca3af;
+            padding: 20px;
+        }
+
+        footer {
+            text-align: center;
+            color: #6b7280;
+            font-size: 13px;
+            padding: 10px;
+        }
+
+        @media (max-width: 900px) {
+            .metrics {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 18px;
+            }
+
+            header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .metrics {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <header>
+        <div class="brand">
+            <h1>RecoverAI</h1>
+            <p>AI-Powered Revenue Recovery Dashboard</p>
+        </div>
+
+        <div class="status {{ ai_status_class }}">
+            {{ ai_status }}
+        </div>
+    </header>
+
+
+    <div class="notice">
+        <strong>Evaluation mode:</strong>
+        Recovery figures are based on synthetic evaluation outcomes.
+        Razorpay Test Mode does not represent real-money recovery.
+    </div>
+
+
+    <!-- Metrics -->
+
+    <div class="metrics">
+
+        <div class="metric-card">
+            <p>Revenue at Risk</p>
+            <h2>₹{{ "%.2f"|format(metrics.revenue_at_risk / 100) }}</h2>
+        </div>
+
+        <div class="metric-card">
+            <p>Revenue Recovered</p>
+            <h2>₹{{ "%.2f"|format(metrics.recovered_revenue / 100) }}</h2>
+        </div>
+
+        <div class="metric-card">
+            <p>Revenue Recovery Rate</p>
+            <h2>{{ "%.2f"|format(metrics.revenue_recovery_rate) }}%</h2>
+        </div>
+
+        <div class="metric-card">
+            <p>Recovery-Eligible Revenue</p>
+            <h2>₹{{ "%.2f"|format(metrics.eligible_revenue / 100) }}</h2>
+        </div>
+
+        <div class="metric-card">
+            <p>Recovered Transactions</p>
+            <h2>{{ metrics.recovered_transactions }}</h2>
+        </div>
+
+        <div class="metric-card">
+            <p>Transaction Recovery Rate</p>
+            <h2>{{ "%.2f"|format(metrics.transaction_recovery_rate) }}%</h2>
+        </div>
+
+    </div>
+
+
+    <!-- Recovery Decisions -->
+
+    <section>
+
+        <h2>Recovery Decisions</h2>
+
+        <p class="section-description">
+            AI analysis followed by deterministic policy approval.
+        </p>
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Payment</th>
+                        <th>Amount</th>
+                        <th>Failure Reason</th>
+                        <th>AI Recommendation</th>
+                        <th>Final Decision</th>
+                        <th>Outcome</th>
+                        <th>Recovered</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for payment in payments %}
+
+                    <tr>
+
+                        <td>{{ payment.payment_id }}</td>
+
+                        <td>
+                            ₹{{ "%.2f"|format(payment.amount / 100) }}
+                        </td>
+
+                        <td>
+                            {{ payment.failure_reason }}
+                        </td>
+
+                        <td>
+                            {% if payment.ai_recommendation %}
+
+                                <strong>
+                                    {{ payment.ai_recommendation|upper }}
+                                </strong>
+
+                            {% elif payment.recovery_eligible == 0 %}
+
+                                <span class="ai-unavailable">
+                                    Not evaluated — ineligible
+                                </span>
+
+                            {% else %}
+
+                                <span class="ai-unavailable">
+                                    AI unavailable
+                                </span>
+
+                            {% endif %}
+                        </td>
+
+                        <td>
+
+                            {% if payment.recovery_status == "retry" %}
+
+                                <span class="badge retry">
+                                    RETRY
+                                </span>
+
+                            {% elif payment.recovery_status == "send_recovery_link" %}
+
+                                <span class="badge link">
+                                    RECOVERY LINK
+                                </span>
+
+                            {% elif payment.recovery_status == "stop" %}
+
+                                <span class="badge stop">
+                                    STOP
+                                </span>
+
+                            {% else %}
+
+                                {{ payment.recovery_status }}
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+
+                            {% if payment.recovery_outcome == "recovered" %}
+
+                                <span class="badge recovered">
+                                    RECOVERED
+                                </span>
+
+                            {% elif payment.recovery_outcome == "not_recovered" %}
+
+                                <span class="badge not-recovered">
+                                    NOT RECOVERED
+                                </span>
+
+                            {% else %}
+
+                                <span class="ai-unavailable">
+                                    Pending
+                                </span>
+
+                            {% endif %}
+
+                        </td>
+
+                        <td>
+                            ₹{{ "%.2f"|format((payment.recovered_amount or 0) / 100) }}
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+    <!-- Razorpay Recovery Links -->
+
+    <section>
+
+        <h2>Razorpay Recovery Links</h2>
+
+        <p class="section-description">
+            Payment links created or reused by RecoverAI.
+        </p>
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Payment</th>
+                        <th>Decision</th>
+                        <th>Recovery Link</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for payment in payments %}
+
+                        {% if payment.recovery_link_url %}
+
+                        <tr>
+
+                            <td>
+                                {{ payment.payment_id }}
+                            </td>
+
+                            <td>
+                                <span class="badge link">
+                                    RECOVERY LINK
+                                </span>
+                            </td>
+
+                            <td>
+                                <a
+                                    class="recovery-link"
+                                    href="{{ payment.recovery_link_url }}"
+                                    target="_blank"
+                                >
+                                    Open Razorpay Link
+                                </a>
+                            </td>
+
+                        </tr>
+
+                        {% endif %}
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+    <!-- Audit Trail -->
+
+    <section>
+
+        <h2>Recovery Audit Trail</h2>
+
+        <p class="section-description">
+            Every recovery action executed by RecoverAI is recorded with
+            its result and timestamp.
+        </p>
+
+        <div class="table-wrapper">
+
+            <table>
+
+                <thead>
+                    <tr>
+                        <th>Payment</th>
+                        <th>Action</th>
+                        <th>Result</th>
+                        <th>Timestamp</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    {% for record in audit_records %}
+
+                    <tr>
+
+                        <td>
+                            {{ record.payment_id }}
+                        </td>
+
+                        <td>
+
+                            {% if record.action == "retry" %}
+
+                                <span class="badge retry">
+                                    RETRY
+                                </span>
+
+                            {% elif record.action == "send_recovery_link" %}
+
+                                <span class="badge link">
+                                    RECOVERY LINK
+                                </span>
+
+                            {% elif record.action == "stop" %}
+
+                                <span class="badge stop">
+                                    STOP
+                                </span>
+
+                            {% else %}
+
+                                {{ record.action }}
+
+                            {% endif %}
+
+                        </td>
+
+                        <td class="audit-result">
+                            {{ record.result }}
+                        </td>
+
+                        <td class="timestamp">
+                            {{ record.timestamp }}
+                        </td>
+
+                    </tr>
+
+                    {% else %}
+
+                    <tr>
+                        <td colspan="4" class="empty">
+                            No recovery actions have been recorded yet.
+                        </td>
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+    </section>
+
+
+    <footer>
+        RecoverAI uses AI recommendations with deterministic policy
+        guardrails before executing recovery actions.
+    </footer>
+
+</div>
+
+</body>
+</html>

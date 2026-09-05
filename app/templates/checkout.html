@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecoverAI - Test Payment</title>
+</head>
+
+<body>
+    <h1>RecoverAI</h1>
+    <p>Test Merchant</p>
+
+    <h2>₹2,499</h2>
+    <p>Premium Subscription</p>
+
+    <button id="pay-button">Pay ₹2,499</button>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+    <script>
+        const options = {
+            key: "{{ key_id }}",
+            amount: "{{ amount }}",
+            currency: "INR",
+            name: "RecoverAI Test Merchant",
+            description: "Test Subscription",
+            order_id: "{{ order_id }}",
+
+            handler: function (response) {
+                console.log("Payment ID:", response.razorpay_payment_id);
+                console.log("Order ID:", response.razorpay_order_id);
+                console.log("Signature:", response.razorpay_signature);
+
+                alert(
+                    "Payment successful!\n\n" +
+                    "Payment ID: " + response.razorpay_payment_id
+                );
+            },
+
+            prefill: {
+                name: "Test Customer",
+                email: "test@example.com",
+                contact: "9999999999"
+            },
+
+            theme: {
+                color: "#000000"
+            }
+        };
+
+        const razorpay = new Razorpay(options);
+
+        document.getElementById("pay-button").onclick = function (event) {
+            razorpay.open();
+            event.preventDefault();
+        };
+    </script>
+</body>
+</html>
