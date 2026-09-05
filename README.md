@@ -1,15 +1,20 @@
 # RecoverAI
 
-AI-powered payment recovery system that helps businesses recover revenue from failed payments using intelligent recovery recommendations, deterministic safety rules, Razorpay integration, and an auditable recovery pipeline.
+**AI-powered payment recovery system for recovering revenue from failed payments using AI-assisted analysis, deterministic policies, Razorpay integration, and an auditable recovery pipeline.**
+
+---
 
 ## Overview
 
-Failed payments can directly translate into lost revenue. RecoverAI analyzes failed payment events and determines the most appropriate recovery strategy instead of blindly retrying every transaction.
+Failed payments can directly translate into lost revenue.
 
-The system combines AI-assisted analysis with deterministic business rules to make recovery decisions that are explainable, controlled, and auditable.
+RecoverAI analyzes failed payment events and determines the most appropriate recovery strategy instead of blindly retrying every transaction.
+
+The system combines **AI-assisted analysis** with **deterministic business rules** to make recovery decisions that are explainable, controlled, and auditable.
 
 ### Core Pipeline
 
+```text
 Failed Payment
       ↓
 Eligibility Check
@@ -25,13 +30,39 @@ Action Execution
 Audit Trail
       ↓
 Recovery Outcome
-
-The key design principle is:
+Design Principle
 
 AI = Recommendation
 Policy = Authority
 Execution = Controlled Action
 Audit = Accountability
+
+Problem
+
+Failed payments create direct revenue leakage for businesses.
+
+A simple retry strategy is not always effective because different payment failures require different recovery actions.
+
+For example:
+
+Some payments can be safely retried.
+Some require the customer to complete authentication again.
+Some should not be retried after repeated failures.
+
+RecoverAI addresses this by analyzing each failed payment and selecting a controlled recovery strategy.
+
+Solution
+
+RecoverAI creates an automated recovery pipeline that:
+
+Detects failed payments.
+Checks whether the payment is eligible for recovery.
+Analyzes the failure context using AI.
+Generates a recommended recovery action.
+Applies deterministic policy and safety rules.
+Executes the approved recovery action.
+Records the action in an audit trail.
+Measures the resulting recovery outcome.
 What RecoverAI Does
 
 For every failed payment, RecoverAI can choose between:
@@ -59,9 +90,7 @@ Diagnosis
 Recommended recovery action
 Reason for the recommendation
 Confidence score
-
-Example:
-
+Example
 Failure:
 payment_failed
 
@@ -99,20 +128,7 @@ Final Action
 
 This makes the recovery pipeline resilient to external AI-service failures.
 
-Razorpay Integration
-
-RecoverAI integrates with Razorpay in Test Mode to demonstrate payment and recovery workflows.
-
-The system can:
-
-Create Razorpay test orders
-Retrieve payment information
-Process test payment events
-Generate/reuse recovery payment links
-Track recovery actions
-Maintain an internal audit trail
-
-No real-money transactions are used in the demo.
+The fallback is intentionally rule-based so that the core recovery workflow can continue without depending completely on an external AI service.
 
 Recovery Strategies
 1. Retry
@@ -144,6 +160,21 @@ Payment Failed
 Recovery Not Appropriate
       ↓
 STOP
+Razorpay Integration
+
+RecoverAI integrates with Razorpay in Test Mode to demonstrate payment and recovery workflows.
+
+The system can:
+
+Create Razorpay test orders
+Retrieve payment information
+Process test payment events
+Generate or reuse recovery payment links
+Track recovery actions
+Maintain an internal audit trail
+
+Note: No real-money transactions are used in this project. Recovery outcomes shown in the dashboard are synthetic evaluation results.
+
 Dashboard
 
 RecoverAI includes a Flask-based dashboard for monitoring recovery activity.
@@ -159,11 +190,22 @@ AI recommendations
 Final recovery decisions
 Recovery outcomes
 Audit history
-Example Demo Scenario
-Payment	Failure	AI Recommendation	Final Action	Outcome
-test_retry_001	Payment failed	Retry	Retry	Recovered
-test_link_001	Authentication failed	Recovery Link	Recovery Link	Recovered
-test_stop_001	Payment failed	Not evaluated	Stop	Not Recovered
+Example Dashboard Metrics
+Metric	Value
+Revenue at Risk	₹16,497
+Revenue Recovered	₹6,498
+Recovery Rate	39.39%
+Recovered Transactions	2
+Recovery-Eligible Revenue	₹6,498
+Transaction Recovery Rate	66.67%
+Example Recovery Decisions
+Payment ID	Amount	Failure Reason	AI Recommendation	Final Decision	Outcome
+test_retry_001	₹2,499	payment_failed	RETRY	RETRY	RECOVERED
+test_link_001	₹3,999	authentication_failed	SEND_RECOVERY_LINK	RECOVERY LINK	RECOVERED
+test_stop_001	₹9,999	payment_failed	Not evaluated	STOP	NOT RECOVERED
+
+The third payment is marked as not evaluated because it is not eligible for automated recovery, so the AI analysis stage is skipped.
+
 Auditability
 
 Every executed recovery action is recorded in an audit trail.
@@ -175,8 +217,23 @@ Action
 Result
 Timestamp
 
-This makes it possible to understand what RecoverAI decided, what action was executed, and when it happened.
+Example:
 
+test_retry_001
+      ↓
+RETRY
+      ↓
+Retry scheduled
+      ↓
+Timestamp recorded
+
+This makes it possible to understand:
+
+Which payment was processed
+What action was selected
+What action was executed
+What result occurred
+When the action happened
 Evaluation Mode
 
 The project includes a synthetic evaluation workflow to demonstrate recovery performance without using real customer transactions.
@@ -187,15 +244,93 @@ Recovered payments
 Unrecovered payments
 Recovery amounts
 Recovery rates
-
-Example:
-
-Revenue at Risk       ₹16,497
-Revenue Recovered      ₹6,498
-Recovery Rate            39.39%
-Recovered Transactions       2
+Current Demo Results
+Metric	Value
+Revenue at Risk	₹16,497
+Revenue Recovered	₹6,498
+Recovery Rate	39.39%
+Recovered Transactions	2
+Recovery-Eligible Revenue	₹6,498
+Transaction Recovery Rate	66.67%
 
 These values are synthetic demonstration results and should not be interpreted as production recovery performance.
+
+Architecture
+                        ┌──────────────────────┐
+                        │   Failed Payments    │
+                        └──────────┬───────────┘
+                                   │
+                                   ▼
+                        ┌──────────────────────┐
+                        │ Eligibility Check    │
+                        └──────────┬───────────┘
+                                   │
+                                   ▼
+                        ┌──────────────────────┐
+                        │    AI Analysis       │
+                        │                      │
+                        │ Diagnosis            │
+                        │ Recommendation       │
+                        │ Confidence           │
+                        └──────────┬───────────┘
+                                   │
+                                   ▼
+                        ┌──────────────────────┐
+                        │ Policy & Guardrails  │
+                        └──────────┬───────────┘
+                                   │
+                         ┌─────────┼─────────┐
+                         │         │         │
+                         ▼         ▼         ▼
+                      RETRY   RECOVERY LINK  STOP
+                         │         │         │
+                         └─────────┼─────────┘
+                                   │
+                                   ▼
+                        ┌──────────────────────┐
+                        │ Action Execution     │
+                        └──────────┬───────────┘
+                                   │
+                                   ▼
+                        ┌──────────────────────┐
+                        │    Audit Trail       │
+                        └──────────┬───────────┘
+                                   │
+                                   ▼
+                        ┌──────────────────────┐
+                        │ Recovery Outcome     │
+                        └──────────────────────┘
+Why This Architecture?
+
+A payment recovery system should not allow an AI model to directly control financial actions.
+
+RecoverAI therefore separates:
+
+Analysis
+   ↓
+Recommendation
+   ↓
+Policy
+   ↓
+Execution
+   ↓
+Audit
+
+This separation provides:
+
+Better control over automated actions
+Explainable decisions
+Clear auditability
+Safer recovery workflows
+Resilience when external AI services fail
+
+The AI recommends.
+
+The policy decides.
+
+The execution layer performs the action.
+
+The audit layer records what happened.
 
 Project Structure
 Recover-AI/
@@ -234,14 +369,14 @@ Recover-AI/
 ├── README.md
 └── requirements.txt
 Tech Stack
-Python
-Flask
-SQLite
-Razorpay Python SDK
-OpenAI API
-python-dotenv
-HTML/CSS
-REST APIs
+Technology	Purpose
+Python	Core application logic
+Flask	Web dashboard and server
+SQLite	Payment events, decisions and audit data
+Razorpay SDK	Payment and recovery-link integration
+OpenAI API	AI-assisted payment analysis
+python-dotenv	Environment configuration
+HTML/CSS	Dashboard interface
 Getting Started
 1. Clone the Repository
 git clone https://github.com/jbryeet/Recover-AI.git
@@ -257,7 +392,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 4. Configure Environment Variables
 
-Create a .env file in the project root:
+Create a .env file in the project root.
 
 RAZORPAY_KEY_ID=your_razorpay_test_key_id
 RAZORPAY_KEY_SECRET=your_razorpay_test_key_secret
@@ -267,7 +402,7 @@ Never commit your .env file or API keys to GitHub.
 
 5. Initialize the Database
 python scripts/migrate_database.py
-6. Create/Reset Demo Events
+6. Create or Reset Demo Events
 python scripts/reset_test_events.py
 7. Run Recovery Analysis
 python scripts/run_recovery.py
@@ -278,7 +413,7 @@ python scripts/simulate_recovery_outcomes.py
 10. Start the Dashboard
 python -m app.server
 
-Open:
+Open the dashboard at:
 
 http://127.0.0.1:5000/
 Running the Complete Demo
@@ -322,31 +457,49 @@ Final decision:
 
 RETRY
 
-The recovery action is executed and recorded in the audit trail.
+The recovery action is then executed and recorded in the audit trail.
 
-Why This Architecture?
+Failure Handling
 
-A payment recovery system should not allow an AI model to directly control financial actions.
+RecoverAI is designed to handle failures in both the payment workflow and the AI service.
 
-RecoverAI therefore separates:
+AI Service Failure
 
-Analysis
-   ↓
-Recommendation
-   ↓
-Policy
-   ↓
-Execution
-   ↓
-Audit
+If the AI service is unavailable:
 
-This separation provides:
+AI API Failure
+      ↓
+Local Fallback Analysis
+      ↓
+Policy Validation
+      ↓
+Recovery Action
+Repeated Payment Failure
 
-Better control over automated actions
-Explainable decisions
-Clear auditability
-Safer recovery workflows
-Resilience when external AI services fail
+If a payment has already reached the retry limit:
+
+Repeated Failure
+      ↓
+Eligibility / Policy Check
+      ↓
+STOP
+
+This prevents uncontrolled repeated recovery attempts.
+
+Security
+
+Sensitive configuration is stored using environment variables.
+
+The repository does not include:
+
+Razorpay secret keys
+OpenAI API keys
+.env files
+Local SQLite databases
+Virtual environment files
+
+These files are excluded through .gitignore.
+
 Limitations
 
 This project is a buildathon prototype rather than a production payment recovery platform.
@@ -366,14 +519,23 @@ Potential extensions include:
 
 Learning recovery policies from historical payment outcomes
 Customer-level recovery personalization
-Better prediction of payment recovery probability
+Recovery probability prediction
 Background job processing
 Automated customer notifications
 Monitoring and alerting
 Production-grade authentication and authorization
 A/B testing of recovery strategies
-More payment gateways
+Support for additional payment gateways
 Real-time recovery analytics
+Continuous learning from recovery outcomes
+Buildathon Context
+
+RecoverAI was built as a payment recovery prototype for the Razorpay Buildathon.
+
+The project focuses on using AI to improve payment recovery while maintaining deterministic controls over financial actions.
+
+The main objective is to demonstrate how AI-assisted reasoning can be integrated into a payment workflow without allowing the AI model to directly execute uncontrolled financial operations.
+
 Project Status
 
 RecoverAI is a functional prototype demonstrating an end-to-end payment recovery workflow with:
@@ -386,14 +548,11 @@ Recovery action execution
 Audit logging
 Synthetic outcome evaluation
 Monitoring dashboard
-
-Built as a Razorpay Buildathon project.
-
 Key Takeaway
 
 RecoverAI is not simply a system that retries failed payments.
 
-It is a controlled recovery pipeline that combines AI-assisted reasoning with deterministic safeguards, controlled execution, and complete auditability.
+It is a controlled recovery pipeline that combines AI-assisted reasoning, deterministic safeguards, controlled execution, and complete auditability.
 
 Failed Payment
       ↓
@@ -408,12 +567,14 @@ Execute safely
 Measure the outcome
       ↓
 Learn from the result
+License
 
-After pasting and saving it, run:
+This project is currently intended as a buildathon and educational prototype.
+
+
+Then save `README.md` and run:
 
 ```powershell
 git add README.md
-git commit -m "Polish README"
+git commit -m "Update README"
 git push
-
-Then refresh your GitHub repo.
